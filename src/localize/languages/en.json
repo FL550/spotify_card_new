@@ -1,7 +1,8 @@
 {
   "common": {
     "version": "Version",
-    "invalid_configuration": "Invalid configuration value: ",
+    "description": "A custom card for displaying Spotify-Playlist and starting playback",
+    "invalid_configuration": "Invalid configuration",
     "show_warning": "Show Warning",
     "show_missing_spotcast": "Spotcast integration has to be installed for this component to work",
     "show_missing_spotify": "Spotify integration has to be installed for playback information"
@@ -17,7 +18,10 @@
     "limit": "Amount of playlists shown",
     "height": "Height of card",
     "country_code": "Country Code for featured playlists",
+    "always_play_random_song": "Always play random song when starting playback",
     "title": "Title of card",
-    "display_style": "Display Style"
+    "display_style": "Display Style",
+    "grid_cover_size": "Cover size in Grid-View in pixels",
+    "grid_center_covers": "Center the covers in Grid-View"
   }
 }

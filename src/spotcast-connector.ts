@@ -1,8 +1,16 @@
 import { SpotifyCard } from './spotify-card';
 
+interface Message {
+  type: string,
+  playlist_type: string,
+  country_code?: string,
+}
+
 export class SpotcastConnector {
   playlists: any = {};
+
   parent: SpotifyCard;
+
   loading = false;
 
   constructor(parent: SpotifyCard) {
@@ -28,13 +36,15 @@ export class SpotcastConnector {
   public fetchPlaylists(limit: number): void {
     console.log(limit);
     this.loading = true;
+    const message: Message = {
+      type: 'spotcast/playlists',
+      playlist_type: this.parent.config.playlist_type ? this.parent.config.playlist_type : '', 
+    };
+    if (this.parent.config.country_code) {
+      message.country_code = this.parent.config.country_code;
+    }
     this.parent.hass.connection
-      .sendMessagePromise({
-        type: 'spotcast/playlists',
-        playlist_type: this.parent.config.playlist_type ? this.parent.config.playlist_type : '',
-        //TODO include only when value is set
-        //country_code: this.parent.config.featuredPlaylistsCountryCode ? this.parent.config.featuredPlaylistsCountryCode : '',
-      })
+      .sendMessagePromise(message)
       .then(
         (resp: any) => {
           console.log('Message success!', resp.items);

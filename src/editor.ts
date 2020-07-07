@@ -13,6 +13,7 @@ import { HomeAssistant, fireEvent, LovelaceCardEditor } from 'custom-card-helper
 import { SpotifyCardConfig } from './types';
 import { localize } from './localize/localize';
 
+//define tabs of editor
 const options = {
   general: {
     icon: 'tune',
@@ -34,7 +35,9 @@ export const DISPLAY_STYLES = ['List', 'Grid'];
 @customElement('spotify-card-editor')
 export class SpotifyCardEditor extends LitElement implements LovelaceCardEditor {
   @property({ type: Object }) public hass?: HomeAssistant;
+
   @internalProperty() private _config?: SpotifyCardConfig;
+
   @internalProperty() private _toggle?: boolean;
 
   public setConfig(config: SpotifyCardConfig): void {
@@ -69,6 +72,13 @@ export class SpotifyCardEditor extends LitElement implements LovelaceCardEditor 
     return '';
   }
 
+  get _always_play_random_song(): boolean {
+    if (this._config) {
+      return this._config.always_play_random_song || false;
+    }
+    return false;
+  }
+
   get _height(): string | number {
     if (this._config) {
       return this._config.height || '';
@@ -81,6 +91,20 @@ export class SpotifyCardEditor extends LitElement implements LovelaceCardEditor 
       return this._config.display_style || 'List';
     }
     return 'List';
+  }
+
+  get _grid_cover_size(): number {
+    if (this._config) {
+      return this._config.grid_cover_size || 100;
+    }
+    return 100;
+  }
+
+  get _grid_center_covers(): boolean {
+    if (this._config) {
+      return this._config.grid_center_covers || false;
+    }
+    return false;
   }
 
   get _hide_warning(): boolean {
@@ -119,7 +143,7 @@ export class SpotifyCardEditor extends LitElement implements LovelaceCardEditor 
           <div class="secondary">${options.general.secondary}</div>
         </div>
         ${options.general.show
-          ? html`
+    ? html`
               <div class="values">
                 <div>
                   <paper-dropdown-menu
@@ -128,9 +152,7 @@ export class SpotifyCardEditor extends LitElement implements LovelaceCardEditor 
                     .configValue=${'playlist_type'}
                   >
                     <paper-listbox slot="dropdown-content" .selected=${PLAYLIST_TYPES.indexOf(this._playlist_type)}>
-                      ${PLAYLIST_TYPES.map((item) => {
-                        return html` <paper-item>${item}</paper-item> `;
-                      })}
+                      ${PLAYLIST_TYPES.map((item) => html` <paper-item>${item}</paper-item> `)}
                     </paper-listbox>
                   </paper-dropdown-menu>
                 </div>
@@ -161,9 +183,18 @@ export class SpotifyCardEditor extends LitElement implements LovelaceCardEditor 
                     @value-changed=${this._valueChanged}
                   ></paper-input>
                 </div>
+                <div>
+                  <ha-switch
+                    aria-label=${`Toggle always_play_random_song ${this._hide_warning ? 'off' : 'on'}`}
+                    .checked=${this._always_play_random_song}
+                    .configValue=${'always_play_random_song'}
+                    @change=${this._valueChanged}
+                    >${localize('settings.always_play_random_song')}</ha-switch
+                  >
+                </div>
               </div>
             `
-          : ''}
+    : ''}
         <div class="option" @click=${this._toggleOption} .option=${'appearance'}>
           <div class="row">
             <ha-icon .icon=${`mdi:${options.appearance.icon}`}></ha-icon>
@@ -172,11 +203,11 @@ export class SpotifyCardEditor extends LitElement implements LovelaceCardEditor 
           <div class="secondary">${options.appearance.secondary}</div>
         </div>
         ${options.appearance.show
-          ? html`
+    ? html`
               <div class="values">
                 <div>
                   <ha-switch
-                    aria-label=${`Hide Warnings ${this._hide_warning ? 'off' : 'on'}`}
+                    aria-label=${`Toogle Warnings ${this._hide_warning ? 'off' : 'on'}`}
                     .checked=${this._hide_warning}
                     .configValue=${'hide_warning'}
                     @change=${this._valueChanged}
@@ -198,11 +229,30 @@ export class SpotifyCardEditor extends LitElement implements LovelaceCardEditor 
                     .configValue=${'display_style'}
                   >
                     <paper-listbox slot="dropdown-content" .selected=${DISPLAY_STYLES.indexOf(this._display_style)}>
-                      ${DISPLAY_STYLES.map((item) => {
-                        return html` <paper-item>${item}</paper-item> `;
-                      })}
+                      ${DISPLAY_STYLES.map((item) => html` <paper-item>${item}</paper-item> `)}
                     </paper-listbox>
                   </paper-dropdown-menu>
+                </div>
+                <div>
+                <div>${localize('settings.grid_cover_size')}</div>
+                <paper-slider
+                    .value=${this._grid_cover_size}
+                    .configValue=${'grid_cover_size'}
+                    @value-changed=${this._valueChanged}
+                    max="450"
+                    min="50"
+                    editable
+                    pin
+                  ></paper-slider>
+                </div>
+                <div>
+                  <ha-switch
+                    aria-label=${`Toggle grid_center_covers ${this._hide_warning ? 'off' : 'on'}`}
+                    .checked=${this._grid_center_covers}
+                    .configValue=${'grid_center_covers'}
+                    @change=${this._valueChanged}
+                    >${localize('settings.grid_center_covers')}</ha-switch
+                  >
                 </div>
                 <ha-switch
                   aria-label=${`Toggle warning ${this._show_error ? 'off' : 'on'}`}
@@ -220,7 +270,7 @@ export class SpotifyCardEditor extends LitElement implements LovelaceCardEditor 
                 >
               </div>
             `
-          : ''}
+    : ''}
       </div>
     `;
   }
@@ -239,18 +289,18 @@ export class SpotifyCardEditor extends LitElement implements LovelaceCardEditor 
   }
 
   private _valueChanged(ev): void {
-    //ev.target.offsetParent checks if editor visible or freetext input is used
+    // ev.target.offsetParent checks if editor visible or freetext input is used
     if (!this._config || !this.hass || ev.target.offsetParent === null) {
       return;
     }
-    const target = ev.target;
+    const { target } = ev;
     if (this[`_${target.configValue}`] === target.value) {
       return;
     }
     if (target.configValue) {
-      //Delete item if false or empty
+      // Delete item if false or empty
       if (target.checked === false || target.value === '') {
-        const clone = Object.assign({}, this._config);
+        const clone = { ...this._config };
         delete clone[target.configValue];
         this._config = clone;
       } else {
@@ -308,6 +358,10 @@ export class SpotifyCardEditor extends LitElement implements LovelaceCardEditor 
 
       paper-input {
         margin-top: -1em;
+      }
+
+      paper-slider {
+        width: auto;
       }
     `;
   }

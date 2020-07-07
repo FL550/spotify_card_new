@@ -3177,7 +3177,8 @@ const subscribeEntities = (conn, onChange) => entitiesColl(conn).subscribe(onCha
 
 var common = {
 	version: "Version",
-	invalid_configuration: "Invalid configuration value: ",
+	description: "A custom card for displaying Spotify-Playlist and starting playback",
+	invalid_configuration: "Invalid configuration",
 	show_warning: "Show Warning",
 	show_missing_spotcast: "Spotcast integration has to be installed for this component to work",
 	show_missing_spotify: "Spotify integration has to be installed for playback information"
@@ -3192,8 +3193,11 @@ var settings = {
 	limit: "Amount of playlists shown",
 	height: "Height of card",
 	country_code: "Country Code for featured playlists",
+	always_play_random_song: "Always play random song when starting playback",
 	title: "Title of card",
-	display_style: "Display Style"
+	display_style: "Display Style",
+	grid_cover_size: "Cover size in Grid-View in pixels",
+	grid_center_covers: "Center the covers in Grid-View"
 };
 var en = {
 	common: common,
@@ -3209,13 +3213,27 @@ var en$1 = /*#__PURE__*/Object.freeze({
 
 var common$1 = {
 	version: "Version",
+	description: "Eine Karte um Spotify-Playlist anzuzeigen und abzuspielen",
 	invalid_configuration: "Ungültige Konfiguration",
-	show_warning: "Vis advarsel",
-	show_missing_spotcast: "Die Spotcast-Integration muss installiert sein, damit diese Karte funktioniert"
+	show_warning: "Warnung",
+	show_missing_spotcast: "Die Spotcast-Integration muss installiert sein, damit diese Karte funktioniert",
+	show_missing_spotify: "Die Spotify-Integration muss installiert sein, damit der Spotify-Status angezeigt werden kann"
 };
 var settings$1 = {
-	general: "Allgemein",
-	general_description: "Allgemeine Einstellungen für diese Karte"
+	general: "Generell",
+	general_description: "Generelle Einstellungen",
+	appearance: "Aussehen",
+	appearance_description: "Passe den Stil und anderes an",
+	hide_warning: "Verstecke Warnhinweise",
+	playlist_type: "Playlist Typ",
+	limit: "Anzahl an angezeigten Playlisten",
+	height: "Höhe der Karte",
+	country_code: "Länder-Code für die Featured-Playlist",
+	always_play_random_song: "Spiele immer einen zufälligen Song beim Starten der Wiedergabe ab",
+	title: "Titel der Karte",
+	display_style: "Anzeige-Stil",
+	grid_cover_size: "Cover Größe in der Karten-Ansicht in Pixeln",
+	grid_center_covers: "Zentriere die Cover in der Karten-Ansicht"
 };
 var de = {
 	common: common$1,
@@ -3271,6 +3289,7 @@ function localize(string, search = '', replace = '') {
     return translated;
 }
 
+//define tabs of editor
 const options = {
     general: {
         icon: 'tune',
@@ -3315,6 +3334,12 @@ let SpotifyCardEditor = class SpotifyCardEditor extends LitElement {
         }
         return '';
     }
+    get _always_play_random_song() {
+        if (this._config) {
+            return this._config.always_play_random_song || false;
+        }
+        return false;
+    }
     get _height() {
         if (this._config) {
             return this._config.height || '';
@@ -3326,6 +3351,18 @@ let SpotifyCardEditor = class SpotifyCardEditor extends LitElement {
             return this._config.display_style || 'List';
         }
         return 'List';
+    }
+    get _grid_cover_size() {
+        if (this._config) {
+            return this._config.grid_cover_size || 100;
+        }
+        return 100;
+    }
+    get _grid_center_covers() {
+        if (this._config) {
+            return this._config.grid_center_covers || false;
+        }
+        return false;
     }
     get _hide_warning() {
         if (this._config) {
@@ -3368,9 +3405,7 @@ let SpotifyCardEditor = class SpotifyCardEditor extends LitElement {
                     .configValue=${'playlist_type'}
                   >
                     <paper-listbox slot="dropdown-content" .selected=${PLAYLIST_TYPES.indexOf(this._playlist_type)}>
-                      ${PLAYLIST_TYPES.map((item) => {
-                return html ` <paper-item>${item}</paper-item> `;
-            })}
+                      ${PLAYLIST_TYPES.map((item) => html ` <paper-item>${item}</paper-item> `)}
                     </paper-listbox>
                   </paper-dropdown-menu>
                 </div>
@@ -3401,6 +3436,15 @@ let SpotifyCardEditor = class SpotifyCardEditor extends LitElement {
                     @value-changed=${this._valueChanged}
                   ></paper-input>
                 </div>
+                <div>
+                  <ha-switch
+                    aria-label=${`Toggle always_play_random_song ${this._hide_warning ? 'off' : 'on'}`}
+                    .checked=${this._always_play_random_song}
+                    .configValue=${'always_play_random_song'}
+                    @change=${this._valueChanged}
+                    >${localize('settings.always_play_random_song')}</ha-switch
+                  >
+                </div>
               </div>
             `
             : ''}
@@ -3416,7 +3460,7 @@ let SpotifyCardEditor = class SpotifyCardEditor extends LitElement {
               <div class="values">
                 <div>
                   <ha-switch
-                    aria-label=${`Hide Warnings ${this._hide_warning ? 'off' : 'on'}`}
+                    aria-label=${`Toogle Warnings ${this._hide_warning ? 'off' : 'on'}`}
                     .checked=${this._hide_warning}
                     .configValue=${'hide_warning'}
                     @change=${this._valueChanged}
@@ -3438,11 +3482,30 @@ let SpotifyCardEditor = class SpotifyCardEditor extends LitElement {
                     .configValue=${'display_style'}
                   >
                     <paper-listbox slot="dropdown-content" .selected=${DISPLAY_STYLES.indexOf(this._display_style)}>
-                      ${DISPLAY_STYLES.map((item) => {
-                return html ` <paper-item>${item}</paper-item> `;
-            })}
+                      ${DISPLAY_STYLES.map((item) => html ` <paper-item>${item}</paper-item> `)}
                     </paper-listbox>
                   </paper-dropdown-menu>
+                </div>
+                <div>
+                <div>${localize('settings.grid_cover_size')}</div>
+                <paper-slider
+                    .value=${this._grid_cover_size}
+                    .configValue=${'grid_cover_size'}
+                    @value-changed=${this._valueChanged}
+                    max="450"
+                    min="50"
+                    editable
+                    pin
+                  ></paper-slider>
+                </div>
+                <div>
+                  <ha-switch
+                    aria-label=${`Toggle grid_center_covers ${this._hide_warning ? 'off' : 'on'}`}
+                    .checked=${this._grid_center_covers}
+                    .configValue=${'grid_center_covers'}
+                    @change=${this._valueChanged}
+                    >${localize('settings.grid_center_covers')}</ha-switch
+                  >
                 </div>
                 <ha-switch
                   aria-label=${`Toggle warning ${this._show_error ? 'off' : 'on'}`}
@@ -3476,16 +3539,16 @@ let SpotifyCardEditor = class SpotifyCardEditor extends LitElement {
         this._toggle = !this._toggle;
     }
     _valueChanged(ev) {
-        //ev.target.offsetParent checks if editor visible or freetext input is used
+        // ev.target.offsetParent checks if editor visible or freetext input is used
         if (!this._config || !this.hass || ev.target.offsetParent === null) {
             return;
         }
-        const target = ev.target;
+        const { target } = ev;
         if (this[`_${target.configValue}`] === target.value) {
             return;
         }
         if (target.configValue) {
-            //Delete item if false or empty
+            // Delete item if false or empty
             if (target.checked === false || target.value === '') {
                 const clone = Object.assign({}, this._config);
                 delete clone[target.configValue];
@@ -3543,6 +3606,10 @@ let SpotifyCardEditor = class SpotifyCardEditor extends LitElement {
       paper-input {
         margin-top: -1em;
       }
+
+      paper-slider {
+        width: auto;
+      }
     `;
     }
 };
@@ -3581,11 +3648,15 @@ class SpotcastConnector {
     fetchPlaylists(limit) {
         console.log(limit);
         this.loading = true;
-        this.parent.hass.connection
-            .sendMessagePromise({
+        const message = {
             type: 'spotcast/playlists',
             playlist_type: this.parent.config.playlist_type ? this.parent.config.playlist_type : '',
-        })
+        };
+        if (this.parent.config.country_code) {
+            message.country_code = this.parent.config.country_code;
+        }
+        this.parent.hass.connection
+            .sendMessagePromise(message)
             .then((resp) => {
             console.log('Message success!', resp.items);
             this.playlists = resp.items;
@@ -3599,46 +3670,47 @@ class SpotcastConnector {
 const CARD_VERSION = '2.0.0';
 
 var SpotifyCard_1;
-//Display card verion in console
+// Display card verion in console
 /* eslint no-console: 0 */
 console.info(`%c  SPOTIFY-CARD \n%c  ${localize('common.version')} ${CARD_VERSION}    `, 'color: orange; font-weight: bold; background: black', 'color: white; font-weight: bold; background: dimgray');
-//Configures the preview in the Lovelace card picker
+// Configures the preview in the Lovelace card picker
 window.customCards = window.customCards || [];
 window.customCards.push({
     type: 'spotify-card',
     name: 'Spotify Card',
-    //TODO: check description
-    description: 'A custom card for displaying Spotify-Playlist and starting playback',
+    description: localize('common.description'),
     preview: true,
 });
 let SpotifyCard = SpotifyCard_1 = class SpotifyCard extends LitElement {
     constructor() {
         super(...arguments);
-        //Private variables
+        // Private variables
         this.spotcast_installed = false;
         this.spotify_installed = false;
         this.spotify_state = {};
     }
-    //Calls the editor
+    // Calls the editor
     static async getConfigElement() {
         return document.createElement('spotify-card-editor');
     }
-    //Returns default config for Lovelace picker
+    // Returns default config for Lovelace picker
     static getStubConfig() {
-        return { playlist_type: '' };
+        return {};
     }
     connectedCallback() {
         super.connectedCallback();
         this.spotcast_connector = new SpotcastConnector(this);
-        //Check for installed spotcast
+        // Check for installed spotcast
         if (servicesColl(this.hass.connection).state.spotcast !== undefined) {
             this.spotcast_installed = true;
         }
+        //get all available entities and when they update
         subscribeEntities(this.hass.connection, (entities) => this.entitiesUpdated(entities));
     }
-    //Get current played playlist
+    //Callback when hass-entity has changed
     entitiesUpdated(entities) {
         for (const item in entities) {
+            // Get current played playlist
             if (item.startsWith('media_player.spotify_')) {
                 this.spotify_installed = true;
                 this.spotify_state = entities[item];
@@ -3648,6 +3720,7 @@ let SpotifyCard = SpotifyCard_1 = class SpotifyCard extends LitElement {
         }
     }
     setConfig(_config) {
+        //Check for errors in config
         let var_error = '';
         if (_config.limit && !(typeof _config.limit === 'number')) {
             var_error = 'limit';
@@ -3667,20 +3740,15 @@ let SpotifyCard = SpotifyCard_1 = class SpotifyCard extends LitElement {
         if (_config.darkmode && !(typeof _config.darkmode === 'boolean')) {
             var_error = 'darkmode';
         }
-        //Error test mode
+        // Show error if neccessary
         if (_config.show_error || var_error != '') {
-            throw new Error(localize('common.invalid_configuration') + var_error);
+            throw new Error(localize('common.invalid_configuration') + ': ' + var_error);
         }
-        //Convenience mode
+        // Convenience mode for developing
         if (_config.test_gui) {
             J().setEditMode(true);
         }
-        //TODO change spotify icon based on selected theme. Problem: only black and white spotify icon is allowed
-        let spotify_icon = '../local/community/spotify-card/img/Spotify_Logo_RGB_Black.png';
-        if (_config.dark_mode) {
-            spotify_icon = '../local/community/spotify-card/img/Spotify_Logo_RGB_White.png';
-        }
-        this.config = Object.assign({ spotify_icon }, _config);
+        this.config = Object.assign({}, _config);
     }
     render() {
         let warning = html ``;
@@ -3693,15 +3761,22 @@ let SpotifyCard = SpotifyCard_1 = class SpotifyCard extends LitElement {
         if (!this.spotify_installed) {
             warning = this.showWarning(localize('common.show_missing_spotify'));
         }
-        //Display loading screen if no content available yet
-        let content = html `<div>loading</div>`;
+        // Display loading screen if no content available yet
+        let content = html `<div>Loading...</div>`;
+        // Request playlist data from spotcast
         if (!this.spotcast_connector.is_loading() && this.spotcast_installed) {
             this.spotcast_connector.fetchPlaylists(this.config.limit ? this.config.limit : 10);
         }
         else {
-            //TODO add grid view
-            content = this.generatePlaylistHTML();
+            // Display spotify playlists
+            if (this.config.display_style == 'Grid') {
+                content = this.generateGridView();
+            }
+            else {
+                content = this.generateListView();
+            }
         }
+        // TODO get devices from spotcast
         const device_list = html `
       <div class="dropdown-content">
         <p>Spotify Connect devices</p>
@@ -3717,10 +3792,14 @@ let SpotifyCard = SpotifyCard_1 = class SpotifyCard extends LitElement {
       </div>
     `;
         return html `
-      <ha-card tabindex="0" style="${this.config.height ? `height: ${this.config.height}px` : ``}"
+      <ha-card tabindex="0" style="${this.config.height ? `height: ${this.config.height}px` : ''}"
         >${this.config.hide_warning ? '' : warning}
         <div id="header">
-          <div id="icon"><img src=${this.config.spotify_icon} /></div>
+          <div id="icon">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 559 168">
+            <path d="m83.996 0.277c-46.249 0-83.743 37.493-83.743 83.742 0 46.251 37.494 83.741 83.743 83.741 46.254 0 83.744-37.49 83.744-83.741 0-46.246-37.49-83.738-83.745-83.738l0.001-0.004zm38.404 120.78c-1.5 2.46-4.72 3.24-7.18 1.73-19.662-12.01-44.414-14.73-73.564-8.07-2.809 0.64-5.609-1.12-6.249-3.93-0.643-2.81 1.11-5.61 3.926-6.25 31.9-7.288 59.263-4.15 81.337 9.34 2.46 1.51 3.24 4.72 1.73 7.18zm10.25-22.802c-1.89 3.072-5.91 4.042-8.98 2.152-22.51-13.836-56.823-17.843-83.448-9.761-3.453 1.043-7.1-0.903-8.148-4.35-1.04-3.453 0.907-7.093 4.354-8.143 30.413-9.228 68.222-4.758 94.072 11.127 3.07 1.89 4.04 5.91 2.15 8.976v-0.001zm0.88-23.744c-26.99-16.031-71.52-17.505-97.289-9.684-4.138 1.255-8.514-1.081-9.768-5.219-1.254-4.14 1.08-8.513 5.221-9.771 29.581-8.98 78.756-7.245 109.83 11.202 3.73 2.209 4.95 7.016 2.74 10.733-2.2 3.722-7.02 4.949-10.73 2.739zm94.56 3.072c-14.46-3.448-17.03-5.868-17.03-10.953 0-4.804 4.52-8.037 11.25-8.037 6.52 0 12.98 2.455 19.76 7.509 0.2 0.153 0.46 0.214 0.71 0.174 0.26-0.038 0.48-0.177 0.63-0.386l7.06-9.952c0.29-0.41 0.21-0.975-0.18-1.288-8.07-6.473-17.15-9.62-27.77-9.62-15.61 0-26.52 9.369-26.52 22.774 0 14.375 9.41 19.465 25.67 23.394 13.83 3.187 16.17 5.857 16.17 10.629 0 5.29-4.72 8.58-12.32 8.58-8.44 0-15.33-2.85-23.03-9.51-0.19-0.17-0.45-0.24-0.69-0.23-0.26 0.02-0.49 0.14-0.65 0.33l-7.92 9.42c-0.33 0.4-0.29 0.98 0.09 1.32 8.96 8 19.98 12.22 31.88 12.22 16.82 0 27.69-9.19 27.69-23.42 0.03-12.007-7.16-18.657-24.77-22.941l-0.03-0.013zm62.86-14.26c-7.29 0-13.27 2.872-18.21 8.757v-6.624c0-0.523-0.42-0.949-0.94-0.949h-12.95c-0.52 0-0.94 0.426-0.94 0.949v73.601c0 0.52 0.42 0.95 0.94 0.95h12.95c0.52 0 0.94-0.43 0.94-0.95v-23.23c4.94 5.53 10.92 8.24 18.21 8.24 13.55 0 27.27-10.43 27.27-30.369 0.02-19.943-13.7-30.376-27.26-30.376l-0.01 0.001zm12.21 30.375c0 10.149-6.25 17.239-15.21 17.239-8.85 0-15.53-7.41-15.53-17.239 0-9.83 6.68-17.238 15.53-17.238 8.81-0.001 15.21 7.247 15.21 17.237v0.001zm50.21-30.375c-17.45 0-31.12 13.436-31.12 30.592 0 16.972 13.58 30.262 30.91 30.262 17.51 0 31.22-13.39 31.22-30.479 0-17.031-13.62-30.373-31.01-30.373v-0.002zm0 47.714c-9.28 0-16.28-7.46-16.28-17.344 0-9.929 6.76-17.134 16.07-17.134 9.34 0 16.38 7.457 16.38 17.351 0 9.927-6.8 17.127-16.17 17.127zm68.27-46.53h-14.25v-14.566c0-0.522-0.42-0.948-0.94-0.948h-12.95c-0.52 0-0.95 0.426-0.95 0.948v14.566h-6.22c-0.52 0-0.94 0.426-0.94 0.949v11.127c0 0.522 0.42 0.949 0.94 0.949h6.22v28.795c0 11.63 5.79 17.53 17.22 17.53 4.64 0 8.49-0.96 12.12-3.02 0.3-0.16 0.48-0.48 0.48-0.82v-10.6c0-0.32-0.17-0.63-0.45-0.8-0.28-0.18-0.63-0.19-0.92-0.04-2.49 1.25-4.9 1.83-7.6 1.83-4.15 0-6.01-1.89-6.01-6.11v-26.76h14.25c0.52 0 0.94-0.426 0.94-0.949v-11.126c0.02-0.523-0.4-0.949-0.93-0.949l-0.01-0.006zm49.64 0.057v-1.789c0-5.263 2.02-7.61 6.54-7.61 2.7 0 4.87 0.536 7.3 1.346 0.3 0.094 0.61 0.047 0.85-0.132 0.25-0.179 0.39-0.466 0.39-0.77v-10.91c0-0.417-0.26-0.786-0.67-0.909-2.56-0.763-5.84-1.546-10.76-1.546-11.95 0-18.28 6.734-18.28 19.467v2.74h-6.22c-0.52 0-0.95 0.426-0.95 0.948v11.184c0 0.522 0.43 0.949 0.95 0.949h6.22v44.405c0 0.53 0.43 0.95 0.95 0.95h12.94c0.53 0 0.95-0.42 0.95-0.95v-44.402h12.09l18.52 44.402c-2.1 4.66-4.17 5.59-6.99 5.59-2.28 0-4.69-0.68-7.14-2.03-0.23-0.12-0.51-0.14-0.75-0.07-0.25 0.09-0.46 0.27-0.56 0.51l-4.39 9.63c-0.21 0.46-0.03 0.99 0.41 1.23 4.58 2.48 8.71 3.54 13.82 3.54 9.56 0 14.85-4.46 19.5-16.44l22.46-58.037c0.12-0.292 0.08-0.622-0.1-0.881-0.17-0.257-0.46-0.412-0.77-0.412h-13.48c-0.41 0-0.77 0.257-0.9 0.636l-13.81 39.434-15.12-39.46c-0.14-0.367-0.49-0.61-0.88-0.61h-22.12v-0.003zm-28.78-0.057h-12.95c-0.52 0-0.95 0.426-0.95 0.949v56.481c0 0.53 0.43 0.95 0.95 0.95h12.95c0.52 0 0.95-0.42 0.95-0.95v-56.477c0-0.523-0.42-0.949-0.95-0.949v-0.004zm-6.4-25.719c-5.13 0-9.29 4.152-9.29 9.281 0 5.132 4.16 9.289 9.29 9.289s9.28-4.157 9.28-9.289c0-5.128-4.16-9.281-9.28-9.281zm113.42 43.88c-5.12 0-9.11-4.115-9.11-9.112s4.04-9.159 9.16-9.159 9.11 4.114 9.11 9.107c0 4.997-4.04 9.164-9.16 9.164zm0.05-17.365c-4.67 0-8.2 3.71-8.2 8.253 0 4.541 3.51 8.201 8.15 8.201 4.67 0 8.2-3.707 8.2-8.253 0-4.541-3.51-8.201-8.15-8.201zm2.02 9.138l2.58 3.608h-2.18l-2.32-3.31h-1.99v3.31h-1.82v-9.564h4.26c2.23 0 3.69 1.137 3.69 3.051 0.01 1.568-0.9 2.526-2.21 2.905h-0.01zm-1.54-4.315h-2.37v3.025h2.37c1.18 0 1.89-0.579 1.89-1.514 0-0.984-0.71-1.511-1.89-1.511z"/>
+          </svg>
+          </div>
           ${this.config.name ? html `<div id="header_name">${this.config.name}</div>` : ''}
           <div></div>
         </div>
@@ -3754,7 +3833,8 @@ let SpotifyCard = SpotifyCard_1 = class SpotifyCard extends LitElement {
       </ha-card>
     `;
     }
-    generatePlaylistHTML() {
+    // Generate items for display style 'List'
+    generateListView() {
         if (this.spotcast_connector.is_loaded()) {
             const result = [];
             for (let i = 0; i < this.spotcast_connector.playlists.length; i++) {
@@ -3788,140 +3868,157 @@ let SpotifyCard = SpotifyCard_1 = class SpotifyCard extends LitElement {
         }
         return html ``;
     }
+    // Generate items for display style 'Grid'
+    generateGridView() {
+        if (this.spotcast_connector.is_loaded()) {
+            const result = [];
+            for (let i = 0; i < this.spotcast_connector.playlists.length; i++) {
+                const item = this.spotcast_connector.playlists[i];
+                let iconPlay = '';
+                if (this.spotify_state.attributes.media_playlist === item.name) {
+                    iconPlay = 'playing';
+                }
+                result.push(html `<div class="grid-item ${iconPlay}">
+          <img src="${item.images[item.images.length - 1].url}" height=${this.config.grid_cover_size ? this.config.grid_cover_size + 'px' : '100px'} />
+        </div>`);
+            }
+            return html `<div id="cover-box" style="justify-content:${this.config.grid_center_covers ? "space-evenly" : "left"}">${result}</div>`;
+        }
+        return html ``;
+    }
+    // Show warning on top of the card
     showWarning(warning) {
         return html `<hui-warning>${warning}</hui-warning>`;
     }
-    showError(error) {
-        const errorCard = document.createElement('hui-error-card');
-        errorCard.setConfig({
-            type: 'error',
-            error,
-            origConfig: this.config,
-        });
-        return html ` ${errorCard} `;
-    }
     static get styles() {
         return [
-            css `
-        ha-card {
-          --header-height: 4em;
-          --footer-height: 3.5em;
-          padding-left: 0.5em;
-          padding-right: 0.5em;
-        }
-
-        #header {
-          display: flex;
-          height: var(--header-height);
-        }
-        #header > * {
-          flex: 1;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        #content {
-          height: calc(100% - var(--header-height) - var(--footer-height));
-          border: solid 2px var(--divider-color);
-          border-radius: 0.2em;
-          overflow: auto;
-          padding: 0.2em;
-        }
-
-        #icon {
-          justify-content: left;
-          padding-left: 0.5em;
-        }
-
-        #icon img {
-          width: 100px;
-        }
-
-        #header_name {
-          font-size: x-large;
-        }
-
-        #footer {
-          height: var(--footer-height);
-        }
-
-        .controls {
-          padding: 0.5em;
-        }
-
-        .dropdown {
-          position: relative;
-          display: inline-block;
-        }
-
-        .mediaplayer_select {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-        .mediaplayer_speaker_icon {
-          display: inline-block;
-          padding: 3px;
-          width: 17px;
-          height: 17px;
-          margin-right: 10px;
-          border: thin solid var(--primary-text-color);
-          border-radius: 50%;
-        }
-
-        .mediaplayer_speaker_icon > path {
-          fill: var(--primary-text-color);
-        }
-
-        .dropdown-wrapper {
-          display: contents;
-          position: absolute;
-          top: 0;
-          bottom: 0;
-          left: 0;
-          right: 0;
-        }
-
-        .dropdown-content {
-          display: none;
-          position: absolute;
-          left: 1em;
-          bottom: 0.5em;
-          max-height: calc(100% - 2em);
-          overflow-y: auto;
-          background-color: var(--card-background-color);
-          min-width: 250px;
-          box-shadow: var(--primary-text-color) 0 0 16px 0px;
-          z-index: 1;
-        }
-
-        .dropdown-content p {
-          background-color: var(--secondary-background-color);
-          font-weight: bold;
-          padding: 0.5em;
-          line-height: 1.5em;
-          margin: 0;
-        }
-        
-        .dropdown-content a {
-          color: var(--primary-text-color);
-          padding: 12px 16px;
-          text-decoration: none;
-          display: block;
-        }
-        .dropdown-content a:hover {
-          box-shadow: inset 0 0 100px 100px var(--secondary-background-color);
-        }
-        .controls:hover + .dropdown-content,
-        .dropdown-content:hover {
-          display: block;
-        }
-      `,
+            SpotifyCard_1.generalStyles,
             SpotifyCard_1.listStyles,
+            SpotifyCard_1.gridStyles,
         ];
     }
 };
+SpotifyCard.generalStyles = css `
+  ha-card {
+    --header-height: 4em;
+    --footer-height: 3.5em;
+    padding-left: 0.5em;
+    padding-right: 0.5em;
+  }
+
+  #header {
+    display: flex;
+    height: var(--header-height);
+  }
+  #header > * {
+    display: flex;
+    flex-grow: 1;
+    align-items: center;
+    
+  }
+
+  #content {
+    height: calc(100% - var(--header-height) - var(--footer-height));
+    border: solid 2px var(--divider-color);
+    border-radius: 0.2em;
+    overflow: auto;
+    padding: 0.2em;
+    background-color: var(--primary-background-color);
+  }
+
+  #icon {
+    justify-content: left;
+    flex-grow: 0;
+    flex-shrink: 1;
+    padding-left: 0.5em;
+  }
+
+  #icon svg {
+    width: 100px;
+    fill: var(--primary-text-color);
+  }
+
+  #header_name {
+    font-size: x-large;
+    justify-content: center;
+  }
+
+  #footer {
+    height: var(--footer-height);
+  }
+
+  .controls {
+    padding: 0.5em;
+  }
+
+  .dropdown {
+    position: relative;
+    display: inline-block;
+  }
+
+  .mediaplayer_select {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .mediaplayer_speaker_icon {
+    display: inline-block;
+    padding: 3px;
+    width: 17px;
+    height: 17px;
+    margin-right: 10px;
+    border: thin solid var(--primary-text-color);
+    border-radius: 50%;
+  }
+
+  .mediaplayer_speaker_icon > path {
+    fill: var(--primary-text-color);
+  }
+
+  .dropdown-wrapper {
+    display: contents;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+  }
+
+  .dropdown-content {
+    display: none;
+    position: absolute;
+    left: 1em;
+    bottom: 0.5em;
+    max-height: calc(100% - 1em);
+    overflow-y: auto;
+    background-color: var(--card-background-color);
+    min-width: 250px;
+    box-shadow: var(--primary-text-color) 0 0 16px 0px;
+    z-index: 1;
+  }
+
+  .dropdown-content p {
+    font-weight: bold;
+    padding: 0.5em;
+    line-height: 1.5em;
+    margin: 0;
+  }
+  
+  .dropdown-content a {
+    color: var(--primary-text-color);
+    padding: 12px 16px;
+    text-decoration: none;
+    display: block;
+  }
+  .dropdown-content a:hover {
+    box-shadow: inset 0 0 100px 100px var(--secondary-background-color);
+  }
+  .controls:hover + .dropdown-content,
+  .dropdown-content:hover {
+    display: block;
+  }
+`;
+//Style definition for the List view
 SpotifyCard.listStyles = css `
     ha-card {
       --list-item-height: 3em;
@@ -3956,25 +4053,32 @@ SpotifyCard.listStyles = css `
 
     .list-item > .icon > svg  {
       fill: var(--primary-text-color);
-
-    .list-item > .icon.playing {
-      fill: var(--primary-color);
+    }
+      .list-item > .icon.playing > svg {    
+      fill: var(--primary-color) !important;
     }
 
     .list-item > p {
       margin: 0 0.5em 0 0.5em;
     }
   `;
-SpotifyCard.litIconSet = html ` <lit-iconset iconset="iconset">
-    <svg>
-      <defs>
-        <g id="play">
-          <path d="M0 0h24v24H0z" fill="none" />
-          <path d="M8 5v14l11-7z" />
-        </g>
-      </defs>
-    </svg>
-  </lit-iconset>`;
+//Style definition for the Grid view
+SpotifyCard.gridStyles = css `
+  #cover-box {
+    display: flex;
+    flex-flow: wrap;
+  }
+
+  .grid-item {
+    box-shadow: var(--primary-text-color) 0 0 0.2em;
+    margin: 0.2em;
+    display: flex;
+  }
+
+  .grid-item.playing {
+    box-shadow: var(--primary-color)  0 0 0.2em 0.2em;
+  }
+  `;
 __decorate([
     property({ type: Object })
 ], SpotifyCard.prototype, "hass", void 0);
